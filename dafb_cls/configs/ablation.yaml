@@ -1,0 +1,140 @@
+backbone_type: "openclip_vitb16"
+layer_indices: [3, 6, 9, 12]
+image_size: 224
+patch_size: 16
+hidden_dim: 256
+fusion_hidden_dim: 256
+head_hidden_dim: 512
+
+task: "segmentation"
+num_classes: 21
+
+frequency_sigma: 0.25
+depth_method: "cosine"
+semantic_method: "patch_text_similarity"
+spatial_kernel: 3
+tau_from_global: true
+depth_attn_zero_init: true
+
+dataset: "voc"
+data_root: "./datasets"
+voc_year: "2012"
+train_split: "train"
+val_split: "val"
+
+batch_size: 16
+epochs: 50
+lr: 1.0e-4
+weight_decay: 1.0e-4
+scheduler: "cosine"
+amp: true
+
+lambda_fg: 1.0
+lambda_decouple: 0.05
+lambda_budget: 0.01
+decouple_method: "cosine_squared"
+r_min: 0.1
+r_max: 0.7
+
+eval_interval: 5
+save_interval: 10
+save_dir: "checkpoints/ablation"
+device: "cuda"
+num_workers: 4
+
+ablation:
+  variants:
+    - name: "baseline_clip"
+      description: "Raw CLIP ViT-B/16 without DAFB-CLS"
+      disable_dafb: true
+
+    - name: "lastvit_freq_topk"
+      description: "LaSt-ViT style frequency Top-K only"
+      disable_dafb: true
+      lastvit_mode: true
+      lastvit_K: 49
+
+    - name: "+multi_cue"
+      description: "Add multi-cue foregroundness"
+      disable_cues: []
+
+    - name: "+adaptive_budget"
+      description: "Add adaptive foreground budget"
+      disable_adaptive_budget: false
+
+    - name: "+dual_cls"
+      description: "Add dual CLS aggregation"
+      disable_dual_cls: false
+
+    - name: "+separate_depth_attn"
+      description: "Add separate foreground/background depth attention"
+      disable_depth_attn: false
+
+    - name: "full_dafb_cls"
+      description: "Full DAFB-CLS framework"
+
+  component_ablation:
+    - name: "w/o_frequency"
+      description: "Remove frequency stability cue"
+      disable_cues: ["frequency"]
+
+    - name: "w/o_semantic"
+      description: "Remove semantic alignment cue"
+      disable_cues: ["semantic"]
+
+    - name: "w/o_depth_consistency"
+      description: "Remove depth consistency cue"
+      disable_cues: ["depth"]
+
+    - name: "w/o_spatial"
+      description: "Remove spatial compactness cue"
+      disable_cues: ["spatial"]
+
+    - name: "fixed_K_49"
+      description: "Fixed Top-K with K=49 (LaSt-ViT default)"
+      lastvit_mode: true
+      lastvit_K: 49
+
+    - name: "fixed_K_98"
+      description: "Fixed Top-K with K=98"
+      lastvit_mode: true
+      lastvit_K: 98
+
+    - name: "single_cls_foreground"
+      description: "Single CLS (foreground only)"
+      disable_dual_cls: true
+      single_cls_mode: "foreground"
+
+    - name: "single_cls_all"
+      description: "Single CLS (all patches)"
+      disable_dual_cls: true
+      single_cls_mode: "all"
+
+    - name: "shared_depth_attn"
+      description: "Shared depth attention for foreground and background"
+      share_depth_attn: true
+
+    - name: "hard_topk"
+      description: "Hard Top-K instead of soft mask"
+      mask_type: "hard_topk"
+
+    - name: "soft_mask"
+      description: "Soft sigmoid mask (default)"
+      mask_type: "soft"
+
+  block_ablation:
+    - name: "N_blocks_2"
+      layer_indices: [6, 12]
+      description: "2 source blocks"
+
+    - name: "N_blocks_4"
+      layer_indices: [3, 6, 9, 12]
+      description: "4 source blocks (default)"
+
+    - name: "N_blocks_6"
+      layer_indices: [2, 4, 6, 8, 10, 12]
+      description: "6 source blocks"
+
+    - name: "N_blocks_8"
+      layer_indices: [2, 3, 5, 6, 8, 9, 11, 12]
+      description: "8 source blocks"

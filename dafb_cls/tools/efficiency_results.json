@@ -1,0 +1,80 @@
+[
+  {
+    "model": "Backbone Baseline",
+    "backbone": "dino_vits16",
+    "total_params": 21666049,
+    "backbone_params": 21665664,
+    "trainable_params": 385,
+    "aggregator_params": 385,
+    "flops_raw": 4249987584,
+    "flops_str": "4.25 GFLOPs",
+    "latency_ms": 6.027,
+    "latency_std_ms": 0.111,
+    "peak_gpu_mem_mb": 96.6
+  },
+  {
+    "model": "LaSt-ViT",
+    "backbone": "dino_vits16",
+    "total_params": 22252308,
+    "backbone_params": 21665664,
+    "trainable_params": 586644,
+    "aggregator_params": 586644,
+    "flops_raw": 4264400640,
+    "flops_str": "4.26 GFLOPs",
+    "latency_ms": 6.36,
+    "latency_std_ms": 0.078,
+    "peak_gpu_mem_mb": 184.2
+  },
+  {
+    "model": "DAFB-CLS (full)",
+    "backbone": "dino_vits16",
+    "total_params": 22252308,
+    "backbone_params": 21665664,
+    "trainable_params": 586644,
+    "aggregator_params": 586644,
+    "flops_raw": 4297166692,
+    "flops_str": "4.30 GFLOPs",
+    "latency_ms": 7.71,
+    "latency_std_ms": 0.205,
+    "peak_gpu_mem_mb": 275.7
+  },
+  {
+    "model": "Backbone Baseline",
+    "backbone": "openclip_vitb16",
+    "total_params": 86208789,
+    "backbone_params": 86192640,
+    "trainable_params": 16149,
+    "aggregator_params": 16149,
+    "flops_raw": 2909604864,
+    "flops_str": "2.91 GFLOPs",
+    "latency_ms": 13.599,
+    "latency_std_ms": 0.66,
+    "peak_gpu_mem_mb": 347.3
+  },
+  {
+    "model": "LaSt-ViT",
+    "backbone": "openclip_vitb16",
+    "total_params": 87936533,
+    "backbone_params": 86192640,
+    "trainable_params": 1743893,
+    "aggregator_params": 1743893,
+    "flops_raw": 11366757632,
+    "flops_str": "11.37 GFLOPs",
+    "latency_ms": 14.508,
+    "latency_std_ms": 0.52,
+    "peak_gpu_mem_mb": 686.5
+  },
+  {
+    "model": "DAFB-CLS (full)",
+    "backbone": "openclip_vitb16",
+    "total_params": 87936533,
+    "backbone_params": 86192640,
+    "trainable_params": 1743893,
+    "aggregator_params": 1743893,
+    "flops_raw": 11419141476,
+    "flops_str": "11.42 GFLOPs",
+    "latency_ms": 16.08,
+    "latency_std_ms": 0.622,
+    "peak_gpu_mem_mb": 1032.5
+  }
+]

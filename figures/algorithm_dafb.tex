@@ -1,0 +1,43 @@
+\documentclass{article}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+
+\begin{document}
+
+\begin{algorithm}[t]
+\caption{DAFB-CLS Forward Pass}
+\label{alg:dafb}
+\begin{algorithmic}[1]
+\Require Image $\mathbf{x}$, frozen ViT $\Phi$, layers $\mathcal{L}=\{3,6,9,12\}$
+\Ensure Decoupled representation $\mathbf{C}$
+\State $\{\mathbf{x}^{\ell}\}_{\ell\in\mathcal{L}} \gets \Phi.\text{extract}(\mathbf{x})$
+\State $\mathbf{c}_{\text{cls}} \gets \mathbf{x}_{0}^{L}$
+\Statex{\textcolor{blue!55!white}{\textbf{$\blacktriangleright$ 1. Multi-cue foregroundness scoring}}}
+\State $S_i \gets \text{FreqStability}(\mathbf{x}^{\ell})$
+\State $D_i \gets \text{DepthConsistency}(\{\mathbf{x}^{\ell}\})$
+\State $A_i \gets \text{SemanticAlign}(\{\mathbf{x}^{\ell}\},\mathbf{c}_{\text{cls}})$
+\State $C_i \gets \text{SpatialCompact}(\cdot)$
+\State $\mathbf{F} \gets \text{MLP}\bigl(\sum_k w_k [S_i,D_i,A_i,C_i]\bigr)$
+\Statex{\textcolor{blue!55!white}{\textbf{$\blacktriangleright$ 2. Adaptive soft masking}}}
+\State $\tau \gets \text{MLP}_{\tau}(\mathbf{c}_{\text{cls}})$
+\State $m_i^F \gets \sigma\bigl((F_i-\tau)/T\bigr)$
+\State $m_i^B \gets (1-m_i^F)\cdot(1-u_i)$
+\Statex{\textcolor{blue!55!white}{\textbf{$\blacktriangleright$ 3. Dual CLS aggregation with depth attention}}}
+\For{$\ell \in \mathcal{L}$}
+    \State $\mathbf{B}_{\ell}^{F} \gets \sum_i m_i^F\mathbf{x}_i^{\ell}\,/\!\sum_i m_i^F$
+    \State $\mathbf{B}_{\ell}^{B} \gets \sum_i m_i^B\mathbf{x}_i^{\ell}\,/\!\sum_i m_i^B$
+\EndFor
+\State $\boldsymbol{\beta}^{F} \gets \text{softmax}(\mathbf{q}_F^{\top}\!\cdot\!\text{RMSNorm}(\{\mathbf{B}_{\ell}^{F}\}))$
+\State $\boldsymbol{\beta}^{B} \gets \text{softmax}(\mathbf{q}_B^{\top}\!\cdot\!\text{RMSNorm}(\{\mathbf{B}_{\ell}^{B}\}))$
+\State $\mathbf{C}_F \gets \sum_{\ell}\beta_{\ell}^{F}\mathbf{B}_{\ell}^{F}$
+\State $\mathbf{C}_B \gets \sum_{\ell}\beta_{\ell}^{B}\mathbf{B}_{\ell}^{B}$
+\Statex{\textcolor{blue!55!white}{\textbf{$\blacktriangleright$ 4. Task-adaptive fusion}}}
+\State $g \gets \sigma(\text{MLP}_g([\mathbf{C}_F,\mathbf{C}_B,\mathbf{c}_{\text{cls}}]))$
+\State $\mathbf{C} \gets g\cdot\mathbf{C}_F + (1-g)\cdot\mathbf{C}_B$
+\State \Return $\mathbf{C}$
+\end{algorithmic}
+\end{algorithm}
+
+\end{document}

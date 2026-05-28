@@ -1,0 +1,71 @@
+backbone_type: "dino_vits16"
+layer_indices: [3, 6, 9, 12]
+image_size: 224
+patch_size: 16
+hidden_dim: 256
+fusion_hidden_dim: 256
+head_hidden_dim: 512
+
+task: "object_discovery"
+num_classes: 20
+
+frequency_sigma: 0.25
+depth_method: "cosine"
+semantic_method: "patch_cls_similarity"
+spatial_kernel: 3
+tau_from_global: true
+depth_attn_zero_init: true
+
+dataset: "voc"
+data_root: "./datasets"
+voc_year: "2012"
+train_split: "train"
+val_split: "val"
+
+batch_size: 16
+epochs: 50
+lr: 1.0e-4
+weight_decay: 1.0e-4
+scheduler: "cosine"
+amp: true
+
+lambda_fg: 1.0
+lambda_decouple: 0.05
+lambda_budget: 0.01
+decouple_method: "cosine_squared"
+r_min: 0.1
+r_max: 0.7
+
+eval_interval: 10
+save_interval: 10
+device: "cuda"
+num_workers: 0
+
+ablation:
+  variants:
+    - name: "baseline_dino"
+      description: "Raw DINO ViT-S/16 without DAFB-CLS"
+      disable_dafb: true
+
+    - name: "full"
+      description: "Full DAFB-CLS framework"
+
+    - name: "no_budget"
+      description: "Without adaptive foreground budget"
+      disable_adaptive_budget: true
+
+    - name: "no_cues"
+      description: "Without multi-cue foregroundness"
+      disable_cues: true
+
+    - name: "no_dual_cls"
+      description: "Single CLS instead of dual CLS"
+      disable_dual_cls: true
+
+    - name: "shared_depth"
+      description: "Shared depth attention for F/B"
+      share_depth_attn: true
+
+    - name: "hard_topk"
+      description: "Hard Top-K instead of soft mask"
+      mask_type: "hard_topk"

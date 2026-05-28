@@ -1,0 +1,44 @@
+backbone_type: "dino_vits16"
+layer_indices: [3, 6, 9, 12]
+image_size: 224
+patch_size: 16
+hidden_dim: 256
+fusion_hidden_dim: 256
+head_hidden_dim: 512
+
+task: "object_discovery"
+num_classes: 80
+
+frequency_sigma: 0.25
+depth_method: "cosine"
+semantic_method: "patch_cls_similarity"
+spatial_kernel: 3
+tau_from_global: true
+depth_attn_zero_init: true
+
+dataset: "coco"
+data_root: "./datasets/coco2017"
+coco_train_ann: "./datasets/coco2017/annotations/instances_train2017.json"
+coco_val_ann: "./datasets/coco2017/annotations/instances_val2017.json"
+train_split: "train2017"
+val_split: "val2017"
+
+batch_size: 16
+epochs: 50
+lr: 5.0e-5
+weight_decay: 1.0e-4
+scheduler: "cosine"
+amp: false
+
+lambda_fg: 0.05
+lambda_decouple: 0.05
+lambda_budget: 0.01
+decouple_method: "cosine_squared"
+r_min: 0.1
+r_max: 0.7
+
+eval_interval: 5
+save_interval: 1
+save_dir: "./checkpoints/dino_vits16_coco"
+device: "cuda"
+num_workers: 0

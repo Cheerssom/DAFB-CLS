@@ -1,0 +1,191 @@
+% ══════════════════════════════════════════════════════════════
+% DAFB-CLS Pipeline Architecture — TikZ Version
+% Compile: pdflatex fig1_pipeline_tikz.tex
+% Or include in IEEE paper: \input{fig1_pipeline_tikz.tex}
+% ══════════════════════════════════════════════════════════════
+\documentclass[border=2pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, backgrounds, calc}
+
+\begin{document}
+\begin{tikzpicture}[
+    % ── Style Definitions ─────────────────────────────
+    >=Stealth,
+    box/.style={
+        rectangle, rounded corners=3pt,
+        minimum width=2.8cm, minimum height=0.6cm,
+        font=\sffamily\small, text=white,
+        draw=#1, fill=#1,
+        line width=0.5pt,
+        align=center,
+    },
+    box2/.style={
+        rectangle, rounded corners=3pt,
+        minimum width=2.8cm, minimum height=0.75cm,
+        font=\sffamily\footnotesize, text=white,
+        draw=#1, fill=#1,
+        line width=0.5pt,
+        align=center,
+    },
+    widebox/.style={
+        rectangle, rounded corners=3pt,
+        minimum width=8cm, minimum height=0.65cm,
+        font=\sffamily\small, text=white,
+        draw=#1, fill=#1,
+        line width=0.5pt,
+        align=center,
+    },
+    cuebox/.style={
+        rectangle, rounded corners=2pt,
+        minimum width=1.7cm, minimum height=0.7cm,
+        font=\sffamily\scriptsize, text=white,
+        draw=#1, fill=#1,
+        line width=0.4pt,
+        align=center,
+    },
+    headbox/.style={
+        rectangle, rounded corners=2pt,
+        minimum width=2.4cm, minimum height=0.65cm,
+        font=\sffamily\scriptsize, text=white,
+        draw=#1, fill=#1,
+        line width=0.4pt,
+        align=center,
+    },
+    formula/.style={
+        font=\sffamily\scriptsize\itshape,
+        text=#1,
+    },
+    arrow/.style={
+        ->, line width=0.5pt, color=#1!70!black,
+    },
+    dashframe/.style={
+        rectangle, rounded corners=4pt,
+        draw=gray!50, dashed, line width=0.4pt,
+        inner sep=6pt,
+    },
+    sectionlabel/.style={
+        font=\sffamily\scriptsize\bfseries,
+        text=#1,
+    },
+]
+
+% ══════════════════════════════════════════════════════════════
+% (a) Input + Frozen Backbone
+% ══════════════════════════════════════════════════════════════
+\node[box=gray!30, text=black, minimum width=2.2cm] (input)
+    at (0, 0) {Input Image $\mathbf{x}$};
+
+\node[widebox=blue!50!black, below=0.3cm of input] (backbone)
+    {Frozen ViT Backbone $\Phi$ \quad {\scriptsize(DINO / OpenCLIP)}};
+
+\node[widebox=blue!40!black!70, below=0.3cm of backbone] (features)
+    {Multi-Layer Feature Extraction \quad $\{P^l\}_{l \in \mathcal{L}},\; c_{\text{cls}}$};
+
+\draw[arrow=blue!50!black] (input) -- (backbone);
+\draw[arrow=blue!50!black] (backbone) -- (features);
+
+% ══════════════════════════════════════════════════════════════
+% (b) Four Cues → Foregroundness → Adaptive Mask
+% ══════════════════════════════════════════════════════════════
+\node[cuebox=green!50!black] (freq)
+    at (-3.1, -2.2) {Frequency\\Stability $S_i$};
+\node[cuebox=olive!70!black] (depth_cue)
+    at (-1.05, -2.2) {Depth\\Consistency $D_i$};
+\node[cuebox=yellow!60!brown] (sem)
+    at (1.05, -2.2) {Semantic\\Alignment $A_i$};
+\node[cuebox=cyan!50!black] (spat)
+    at (3.1, -2.2) {Spatial\\Compactness $C_i$};
+
+\draw[arrow=blue!40] (features.south) -| (freq.north);
+\draw[arrow=blue!40] (features.south) -- (depth_cue.north);
+\draw[arrow=blue!40] (features.south) -- (sem.north);
+\draw[arrow=blue!40] (features.south) -| (spat.north);
+
+\node[widebox=brown!60!black, below=0.4cm of sem] (fg_score)
+    {Foregroundness Scoring
+     \quad $\scriptstyle F_i = \sum w_k s_{i,k} + \mathrm{MLP}(\mathbf{s}_i) + 0.5 \cdot \mathrm{Smooth}$};
+
+\draw[arrow=brown!60] (freq.south) |- (fg_score.north west);
+\draw[arrow=brown!60] (depth_cue.south) -- (fg_score);
+\draw[arrow=brown!60] (sem.south) -- (fg_score);
+\draw[arrow=brown!60] (spat.south) |- (fg_score.north east);
+
+\node[widebox=orange!70!red!80, below=0.35cm of fg_score] (mask)
+    {Adaptive Budget Masking
+     \quad $\scriptstyle m_i^F = \sigma\!\left(\frac{F_i - \tau}{T}\right)$};
+
+\draw[arrow=orange!70!black] (fg_score) -- (mask);
+
+% Dashed frame for Spatial Selection
+\begin{scope}[on background layer]
+    \node[dashframe, fit=(freq)(depth_cue)(sem)(spat)(fg_score)(mask),
+          label={[sectionlabel=gray!70]above left:Spatial Selection}] {};
+\end{scope}
+
+% ══════════════════════════════════════════════════════════════
+% (c) Dual CLS + Depth Attention
+% ══════════════════════════════════════════════════════════════
+\node[box2=orange!80!red] (cls_fg)
+    at (-1.8, -4.8) {Foreground CLS\\$\scriptstyle B_l^F = \frac{\sum m_i^F \cdot P_i^l}{\sum m_i^F}$};
+
+\node[box2=blue!70!black] (cls_bg)
+    at (1.8, -4.8) {Background CLS\\$\scriptstyle B_l^B = \frac{\sum m_i^B \cdot P_i^l}{\sum m_i^B}$};
+
+\draw[arrow=orange!70!black] (mask.south) -| (cls_fg.north);
+\draw[arrow=blue!70!black] (mask.south) -| (cls_bg.north);
+
+\node[box2=violet!65!blue] (da_fg)
+    at (-1.8, -6.0) {Depth Attention\\$\scriptstyle C_F = \sum \beta_l^F \cdot B_l^F$};
+
+\node[box2=violet!65!blue] (da_bg)
+    at (1.8, -6.0) {Depth Attention\\$\scriptstyle C_B = \sum \beta_l^B \cdot B_l^B$};
+
+\draw[arrow=violet!70] (cls_fg) -- (da_fg);
+\draw[arrow=violet!70] (cls_bg) -- (da_bg);
+
+% Dashed frame for Dual CLS
+\begin{scope}[on background layer]
+    \node[dashframe, fit=(cls_fg)(cls_bg)(da_fg)(da_bg),
+          label={[sectionlabel=gray!70]above:Dual CLS with Depth Attention}] {};
+\end{scope}
+
+% ══════════════════════════════════════════════════════════════
+% (d) Task-Adaptive Fusion
+% ══════════════════════════════════════════════════════════════
+\node[widebox=red!60!black, below=0.5cm of cls_bg, xshift=-0cm] (fusion)
+    {Task-Adaptive Fusion
+     \quad $\scriptstyle g = \sigma(\mathrm{MLP}([C_F;\, C_B;\, c_{\text{cls}}]))$};
+
+\node[formula=red!60!black, below=0.05cm of fusion] (fusion_formula)
+    {$C = g \cdot C_F + (1 - g) \cdot C_B$};
+
+\draw[arrow=red!60!black] (da_fg.south) |- (fusion.north west);
+\draw[arrow=red!60!black] (da_bg.south) |- (fusion.north east);
+
+% ══════════════════════════════════════════════════════════════
+% (e) Task Heads
+% ══════════════════════════════════════════════════════════════
+\node[headbox=gray!60] (head_cls)
+    at (-3.0, -8.0) {Classification\\$\scriptstyle \mathrm{MLP}(C) \to y$};
+
+\node[headbox=gray!60] (head_seg)
+    at (0, -8.0) {Segmentation\\$\scriptstyle \mathrm{Sim}(P, t_j) \to M$};
+
+\node[headbox=gray!60] (head_disc)
+    at (3.0, -8.0) {Object Discovery\\$\scriptstyle \mathrm{Score}(P) \to S$};
+
+\draw[arrow=gray!60] (fusion.south) |- (head_cls.north);
+\draw[arrow=gray!60] (fusion.south) -- (head_seg.north);
+\draw[arrow=gray!60] (fusion.south) |- (head_disc.north);
+
+% ══════════════════════════════════════════════════════════════
+% Section Labels (right side)
+% ══════════════════════════════════════════════════════════════
+\node[sectionlabel=blue!50!black, rotate=90] at (5.0, -0.8) {(a)};
+\node[sectionlabel=brown!60!black, rotate=90] at (5.0, -3.0) {(b)};
+\node[sectionlabel=violet!65!blue, rotate=90] at (5.0, -5.4) {(c)};
+\node[sectionlabel=red!60!black, rotate=90] at (5.0, -7.0) {(d)};
+\node[sectionlabel=gray!60, rotate=90] at (5.0, -8.0) {(e)};
+
+\end{tikzpicture}
+\end{document}
